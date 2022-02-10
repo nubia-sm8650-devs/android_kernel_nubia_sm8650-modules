@@ -647,6 +647,11 @@ struct sde_drm_frame_data_packet {
 	struct sde_drm_plane_frame_data plane_frame_data[SDE_FRAME_DATA_MAX_PLANES];
 };
 
+/**
+ * sde fod dim layer
+ */
+#define FOD_PRESSED_LAYER_ZORDER	0x20000000u
+
 /*
  * Colorimetry Data Block values
  * These bit nums are defined as per the CTA spec
