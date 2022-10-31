@@ -209,8 +209,12 @@ struct sde_plane_state {
 	struct sde_hw_pipe_line_insertion_cfg line_insertion_cfg;
 	bool lineinsertion_feature;
 
+	const struct drm_msm_pcc *pcc_cfg;
+	uint32_t pcc_coeff[9];
 	struct sde_csc_cfg csc_cfg;
+	struct sde_csc_cfg csc_pcc_cfg;
 	struct sde_csc_cfg *csc_usr_ptr;
+	struct sde_csc_cfg *csc_pcc_ptr;
 	struct sde_csc_cfg *csc_ptr;
 };
 
