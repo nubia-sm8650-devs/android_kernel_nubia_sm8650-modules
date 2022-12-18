@@ -605,6 +605,7 @@ struct sde_crtc_state {
 	bool cont_splash_populated;
 	struct sde_line_insertion_param line_insertion;
 	bool hwfence_in_fences_set;
+	u8 fod_dim_alpha;
 };
 
 enum sde_crtc_irq_state {
@@ -1215,5 +1216,7 @@ void sde_crtc_calc_vpadding_param(struct drm_crtc_state *state, u32 crtc_y, u32 
  * @bl_max: Max backlight value.
  */
 void sde_crtc_backlight_notify(struct drm_crtc *crtc, u32 bl_val, u32 bl_max);
+
+bool sde_crtc_is_fod_enabled(struct drm_crtc_state *state);
 
 #endif /* _SDE_CRTC_H_ */
