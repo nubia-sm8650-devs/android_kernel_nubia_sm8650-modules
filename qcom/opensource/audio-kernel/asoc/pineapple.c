@@ -78,6 +78,10 @@
 }
 #define MAX_NAME_LEN	40
 
+/* ZTE MBHC */
+#define ZTE_MBHC_CAL
+#define WCD_MBHC_HS_V_MAX_ZTE       1700
+
 enum {
 	WCD937X_DEV_INDEX,
 	WCD939X_DEV_INDEX,
@@ -140,9 +144,15 @@ static struct wcd_mbhc_config wcd_mbhc_cfg = {
 	.swap_gnd_mic = NULL,
 	.hs_ext_micbias = true,
 	.key_code[0] = KEY_MEDIA,
+#ifdef ZTE_MBHC_CAL
+	.key_code[1] = KEY_VOLUMEUP,
+	.key_code[2] = KEY_VOLUMEDOWN,
+	.key_code[3] = 0,
+#else
 	.key_code[1] = KEY_VOICECOMMAND,
 	.key_code[2] = KEY_VOLUMEUP,
 	.key_code[3] = KEY_VOLUMEDOWN,
+#endif
 	.key_code[4] = 0,
 	.key_code[5] = 0,
 	.key_code[6] = 0,
@@ -509,15 +519,25 @@ static void *def_wcd_mbhc_cal(void)
 	if (!wcd_mbhc_cal)
 		return NULL;
 
+#ifdef ZTE_MBHC_CAL
+	WCD_MBHC_CAL_PLUG_TYPE_PTR(wcd_mbhc_cal)->v_hs_max = WCD_MBHC_HS_V_MAX_ZTE;
+#else
 	WCD_MBHC_CAL_PLUG_TYPE_PTR(wcd_mbhc_cal)->v_hs_max = WCD_MBHC_HS_V_MAX;
+#endif
 	WCD_MBHC_CAL_BTN_DET_PTR(wcd_mbhc_cal)->num_btn = WCD_MBHC_DEF_BUTTONS;
 	btn_cfg = WCD_MBHC_CAL_BTN_DET_PTR(wcd_mbhc_cal);
 	btn_high = ((void *)&btn_cfg->_v_btn_low) +
 		(sizeof(btn_cfg->_v_btn_low[0]) * btn_cfg->num_btn);
 
+#ifdef ZTE_MBHC_CAL
+	btn_high[0] = 100;
+	btn_high[1] = 200;
+	btn_high[2] = 400;
+#else
 	btn_high[0] = 75;
 	btn_high[1] = 150;
 	btn_high[2] = 237;
+#endif
 	btn_high[3] = 500;
 	btn_high[4] = 500;
 	btn_high[5] = 500;
