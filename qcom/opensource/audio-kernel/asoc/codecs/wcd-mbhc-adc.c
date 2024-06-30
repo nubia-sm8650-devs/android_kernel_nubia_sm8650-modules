@@ -721,8 +721,10 @@ correct_plug_type:
 	/*
 	 * Callback to disable BCS slow insertion detection
 	 */
-	if (mbhc->mbhc_cb->bcs_enable)
-		mbhc->mbhc_cb->bcs_enable(mbhc, false);
+	if (plug_type == MBHC_PLUG_TYPE_HEADSET ||
+	    plug_type == MBHC_PLUG_TYPE_HEADPHONE)
+		if (mbhc->mbhc_cb->bcs_enable)
+			mbhc->mbhc_cb->bcs_enable(mbhc, false);
 
 	timeout = jiffies + msecs_to_jiffies(HS_DETECT_PLUG_TIME_MS);
 	while (!time_after(jiffies, timeout)) {
@@ -904,6 +906,17 @@ report:
 		goto exit;
 	}
 
+	if (plug_type == MBHC_PLUG_TYPE_GND_MIC_SWAP &&
+	    mbhc->mbhc_cfg->enable_usbc_analog) {
+		plug_type = wcd_mbhc_get_plug_from_adc(mbhc, output_mv);
+		pr_debug("%s: Get swap plug %d\n", __func__, plug_type);
+	}
+
+	if (plug_type == MBHC_PLUG_TYPE_HEADSET ||
+	    plug_type == MBHC_PLUG_TYPE_HEADPHONE)
+		if (mbhc->mbhc_cb->bcs_enable)
+			mbhc->mbhc_cb->bcs_enable(mbhc, true);
+
 	pr_debug("%s: Valid plug found, plug type %d wrk_cmpt %d btn_intr %d\n",
 			__func__, plug_type, wrk_complete,
 			mbhc->btn_press_intr);
@@ -926,8 +939,10 @@ enable_supply:
 	else
 		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_DETECTION_DONE, 0);
 
-	if (mbhc->mbhc_cb->bcs_enable)
-		mbhc->mbhc_cb->bcs_enable(mbhc, true);
+	if (plug_type == MBHC_PLUG_TYPE_HEADSET ||
+	    plug_type == MBHC_PLUG_TYPE_HEADPHONE)
+		if (mbhc->mbhc_cb->bcs_enable)
+			mbhc->mbhc_cb->bcs_enable(mbhc, true);
 
 	if (mbhc->mbhc_cb->mbhc_micbias_control)
 		wcd_mbhc_adc_update_fsm_source(mbhc, plug_type);
