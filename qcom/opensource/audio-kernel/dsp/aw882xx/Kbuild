@@ -1,6 +1,6 @@
 # We can build either as part of a standalone Kernel build or as
 # an external module.  Determine which mechanism is being used
-ifeq ($(MODNAME), )
+ifeq ($(MODNAME),)
 	KERNEL_BUILD := 1
 else
 	KERNEL_BUILD := 0
@@ -62,16 +62,15 @@ endif
 # config.
 
 ############ UAPI ############
-UAPI_DIR :=	uapi/audio/
+UAPI_DIR :=	uapi/audio
 UAPI_INC :=	-I$(AUDIO_ROOT)/include/$(UAPI_DIR)
 
 ############ COMMON ############
 COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
-$(warning "QCh is here COMMON_INC = $(COMMON_INC)")
 ############ AW882XX ############
-#ifdef CONFIG_SND_SMARTPA_AW882XX
+ifdef CONFIG_SND_SMARTPA_AW882XX
 AW882XX_OBJS += aw882xx.o 
 AW882XX_OBJS += aw882xx_bin_parse.o
 AW882XX_OBJS += aw882xx_calib.o
@@ -80,13 +79,12 @@ AW882XX_OBJS += aw882xx_dsp.o
 AW882XX_OBJS += aw882xx_init.o
 AW882XX_OBJS += aw882xx_monitor.o 
 AW882XX_OBJS += aw882xx_spin.o
-#endif
+endif
 
 LINUX_INC +=	-Iinclude/linux
 
 INCS +=		$(COMMON_INC) \
-		$(UAPI_INC) \
-                $(ROOT_DIR)/msm-kernel/include #add by zte QC 20220901
+		$(UAPI_INC)
 
 EXTRA_CFLAGS += $(INCS)
 
@@ -117,7 +115,5 @@ EXTRA_CFLAGS += -Wheader-guard
 endif
 
 # Module information used by KBuild framework
-
-#$(CONFIG_SND_SMARTPA_AW882XX)
-obj-m += aw882xx_dlkm.o
+obj-$(CONFIG_SND_SMARTPA_AW882XX) += aw882xx_dlkm.o
 aw882xx_dlkm-y := $(AW882XX_OBJS)
