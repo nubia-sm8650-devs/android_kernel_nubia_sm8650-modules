@@ -30,7 +30,6 @@
 #include <sound/control.h>
 #include <linux/uaccess.h>
 #include <linux/vmalloc.h>
-#include "smartpa_stat.h"
 
 #include "aw882xx.h"
 #include "aw882xx_log.h"
@@ -2352,8 +2351,6 @@ static int aw882xx_i2c_probe(struct i2c_client *i2c,
 
 	/* hardware reset */
 	aw882xx_hw_reset(aw882xx);
-	/* ZTE added for monitor the smartpat chipeset status */
-	smartpa_count_add_t();
 	/* aw882xx chip id */
 	ret = aw882xx_read_chipid(aw882xx);
 	if (ret < 0) {
@@ -2397,8 +2394,6 @@ static int aw882xx_i2c_probe(struct i2c_client *i2c,
 	mutex_lock(&g_aw882xx_lock);
 	g_aw882xx_dev_cnt++;
 	mutex_unlock(&g_aw882xx_lock);
-	/* ZTE added for monitor the smartpat chipeset status */
-	smartpa_stat_update_t();
 #ifdef CONFIG_VENDOR_ZTE_DEV_MONITOR_SYSTEM
 	aw882xx->zlog_aw882xx_client = zlog_register_client(&zlog_aw882xx_dev);
 	if (!aw882xx->zlog_aw882xx_client) {
