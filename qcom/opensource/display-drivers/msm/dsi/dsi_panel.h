@@ -212,6 +212,39 @@ struct dsi_panel_ops {
 	int (*trigger_esd_attack)(struct dsi_panel *panel);
 };
 
+// #ifdef CONFIG_ZTE_DISP
+#define COLOR_GAMUT_ORIGINAL 0
+#define COLOR_GAMUT_SRGB 1
+#define COLOR_GAMUT_P3 2
+#define BUF_LEN_MAX 256
+
+struct disp_hbm_config {
+	/* HDR */
+	u32 hdr_video_brightness;
+	u32 *hdr_threshold_list;
+	u32 hdr_threshold_list_len;
+	u32 hdr_sunlight_lvl;
+	bool hdr_video_enable;
+	/* HBM */
+	bool global_hbm;
+};
+
+struct zte_disp_feature {
+	const char *zte_lcd_info;
+	struct disp_hbm_config *hbm_config;
+	/* Disp Feature */
+	u32 zte_lcd_hbm;
+	u32 zte_lcd_hdr;
+	u32 zte_lcd_aod_bl;
+	u32 zte_lcd_cur_fps;
+	u32 zte_lcd_color_gamut;
+	u32 zte_lcd_acl;
+	u32 zte_panel_state;
+	u32 zte_lcd_lspot;
+	u32 zte_lcd_bl_limit;
+};
+// #endif
+
 struct dsi_panel {
 	const char *name;
 	const char *type;
@@ -275,6 +308,24 @@ struct dsi_panel {
 	enum dsi_panel_physical_type panel_type;
 
 	struct dsi_panel_ops panel_ops;
+	// #ifdef CONFIG_ZTE_DISP
+	struct delayed_work dim_work;
+	struct delayed_work enter_aod_work;
+	struct delayed_work exit_aod_work;
+	struct delayed_work fod_uiready_delayed_work;
+	struct workqueue_struct *fod_uiready_wq;
+	struct zte_disp_feature *disp_feature;
+	atomic_t pm_aod;
+	u32 saved_backlight;
+	u32 vsync_width;
+	bool aod_layer;
+	bool fod_layer;
+	bool bypass_gamut;
+	bool enter_aod_worked;
+	bool exit_aod_worked;
+	bool in_aod;
+	bool is_hbm_enabled;
+	// #endif
 };
 
 static inline bool dsi_panel_ulps_feature_enabled(struct dsi_panel *panel)
@@ -411,4 +462,7 @@ int dsi_panel_create_cmd_packets(const char *data, u32 length, u32 count,
 void dsi_panel_destroy_cmd_packets(struct dsi_panel_cmd_set *set);
 
 void dsi_panel_dealloc_cmd_packets(struct dsi_panel_cmd_set *set);
+
+int zte_dsi_panel_tx_cmd_set(struct dsi_panel *panel,
+			     enum dsi_cmd_set_type type);
 #endif /* _DSI_PANEL_H_ */
