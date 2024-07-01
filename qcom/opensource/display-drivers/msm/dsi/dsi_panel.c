@@ -21,6 +21,8 @@
 #include "sde_dbg.h"
 #include "sde_dsc_helper.h"
 #include "sde_vdc_helper.h"
+#include "../zte_disp/zte_panel_backlight.h"
+#include "../zte_disp/zte_panel_work.h"
 
 /**
  * topology is currently defined by a set of following 3 values:
@@ -480,6 +482,17 @@ error:
 	return rc;
 }
 
+int zte_dsi_panel_tx_cmd_set(struct dsi_panel *panel,
+			     enum dsi_cmd_set_type type)
+{
+	if (!panel->panel_initialized) {
+		pr_err("MSM_LCD panel is off or not initialized don't send tx cmd\n");
+		return -EPERM;
+	}
+
+	return dsi_panel_tx_cmd_set(panel, type);
+}
+
 static int dsi_panel_pinctrl_deinit(struct dsi_panel *panel)
 {
 	int rc = 0;
@@ -643,11 +656,20 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 		return 0;
 
 	DSI_DEBUG("backlight type:%d lvl:%d\n", bl->type, bl_lvl);
+
+	zte_dsi_panel_convert_limit_bl(panel, &bl_lvl);
+
+	zte_dsi_panel_convert_hdr_bl(panel, &bl_lvl);
+
 	switch (bl->type) {
 	case DSI_BACKLIGHT_WLED:
 		rc = backlight_device_set_brightness(bl->raw_bd, bl_lvl);
 		break;
 	case DSI_BACKLIGHT_DCS:
+		if (panel->disp_feature->hbm_config) {
+			rc = zte_dsi_panel_update_backlight(panel, bl_lvl);
+			break;
+		}
 		rc = dsi_panel_update_backlight(panel, bl_lvl);
 		break;
 	case DSI_BACKLIGHT_EXTERNAL:
@@ -3812,6 +3834,7 @@ static int dsi_panel_load_calib_data(struct dsi_panel *panel,
 	return ret;
 }
 
+extern void zte_disp_common_func(struct dsi_panel *panel);
 struct dsi_panel *dsi_panel_get(struct device *parent,
 				struct device_node *of_node,
 				struct device_node *parser_node,
@@ -3913,6 +3936,8 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 		if (rc == -EPROBE_DEFER)
 			goto error;
 	}
+
+	zte_disp_common_func(panel);
 
 	rc = dsi_panel_parse_misc_features(panel);
 	if (rc)
@@ -4998,6 +5023,9 @@ int dsi_panel_switch(struct dsi_panel *panel)
 		DSI_ERR("[%s] failed to send DSI_CMD_SET_TIMING_SWITCH cmds, rc=%d\n",
 		       panel->name, rc);
 
+	if (panel->disp_feature)
+		zte_panel_fps_send_uevent(panel->disp_feature->zte_lcd_cur_fps);
+
 	mutex_unlock(&panel->panel_lock);
 	return rc;
 }
@@ -5147,6 +5175,9 @@ int dsi_panel_disable(struct dsi_panel *panel)
 	}
 	panel->panel_initialized = false;
 	panel->power_mode = SDE_MODE_DPMS_OFF;
+	panel->disp_feature->zte_lcd_hbm = 0;
+	panel->disp_feature->zte_lcd_hdr = 0;
+	panel->disp_feature->zte_lcd_acl = 0;
 
 	mutex_unlock(&panel->panel_lock);
 	return rc;
