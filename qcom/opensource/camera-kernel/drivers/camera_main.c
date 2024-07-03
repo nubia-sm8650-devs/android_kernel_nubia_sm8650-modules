@@ -282,6 +282,9 @@ static void __camera_exit(int i, int j)
 	}
 }
 
+extern void stmvl53l1_exit(void);
+extern bool tof_enable;
+
 static int camera_init(void)
 {
 	int rc;
@@ -322,7 +325,8 @@ static void camera_exit(void)
 {
 	__camera_exit(ARRAY_SIZE(submodule_table), 0);
 	cam_debugfs_deinit();
-
+	if (tof_enable)
+		stmvl53l1_exit();
 	CAM_INFO(CAM_UTIL, "Spectra camera driver exited!");
 }
 

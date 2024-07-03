@@ -154,6 +154,9 @@ struct cam_sensor_ctrl_t {
 	bool                           stream_off_after_eof;
 	bool                           is_res_info_updated;
 	bool                           hw_no_ops;
+	uint32_t                       ois_firmware_ver;
+	struct platform_device        *ois_pdev;
+	struct platform_device        *actuator_pdev;
 };
 
 /**
