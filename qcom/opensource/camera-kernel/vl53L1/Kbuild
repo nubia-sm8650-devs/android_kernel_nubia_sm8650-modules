@@ -3,15 +3,8 @@
 #
 
 ccflags-y	+= -I$(src)/inc -I$(src)
-
-
 ccflags-y	+= -I$(src)/protected/inc
-ccflags-y	+= -DVL53L1_FULL_KERNEL
-
-
-
 ccflags-y	+= -DVL53L3
-
 
 # define this environment variable if you want to compile driver for an old
 # kernel
@@ -29,6 +22,7 @@ camera-y += \
 	$(TOF_KROOT)/protected/src/vl53l1_dmax.o \
 	$(TOF_KROOT)/protected/src/vl53l1_hist_algos_gen4.o \
 	$(TOF_KROOT)/stmvl53l1_i2c.o \
+	$(TOF_KROOT)/stmvl53l1_ipp_nl.o \
 	$(TOF_KROOT)/stmvl53l1_log.o \
 	$(TOF_KROOT)/src/vl53l1_api.o \
 	$(TOF_KROOT)/src/vl53l1_api_core.o \
