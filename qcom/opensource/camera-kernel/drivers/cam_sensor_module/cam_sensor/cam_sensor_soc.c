@@ -13,6 +13,12 @@
 #include "cam_sensor_soc.h"
 #include "cam_soc_util.h"
 
+bool tof_enable = false;
+bool tof_inited = false;
+
+extern int stmvl53l1_init(void);
+
+
 int32_t cam_sensor_get_sub_module_index(struct device_node *of_node,
 	struct cam_sensor_board_info *s_info)
 {
@@ -22,6 +28,16 @@ int32_t cam_sensor_get_sub_module_index(struct device_node *of_node,
 	struct cam_sensor_board_info *sensor_info;
 
 	sensor_info = s_info;
+	
+	tof_enable = of_property_read_bool(of_node, "zte-tof-enable");
+
+    if(tof_enable && tof_inited == false){
+		/* add tof modules begin*/
+		CAM_DBG(CAM_SENSOR, "TOF_stmvl53l1_init");
+		stmvl53l1_init();
+		tof_inited = true; 
+		/* add tof modules end*/
+    }
 
 	for (i = 0; i < SUB_MODULE_MAX; i++)
 		sensor_info->subdev_id[i] = -1;
@@ -129,6 +145,52 @@ static int32_t cam_sensor_init_bus_params(struct cam_sensor_ctrl_t *s_ctrl)
 	return 0;
 }
 
+int32_t cam_sensor_get_ois_dev(struct device_node *of_node,
+	struct cam_sensor_ctrl_t *s_ctrl)
+{
+	int rc = 0;
+	struct device_node *src_node = NULL;
+
+	src_node = of_parse_phandle(of_node, "ois-src", 0);
+
+	if (!src_node) {
+		CAM_ERR(CAM_SENSOR, "ois src_node NULL");
+	} else {
+		s_ctrl->ois_pdev = of_find_device_by_node(src_node);
+		if (!s_ctrl->ois_pdev) {
+			CAM_ERR(CAM_SENSOR, ": can't find the device by node");
+			of_node_put(src_node);
+			return -EINVAL;
+		}
+		of_node_put(src_node);
+		src_node = NULL;
+	}
+	return rc;
+}
+
+int32_t cam_sensor_get_actuator_dev(struct device_node *of_node,
+	struct cam_sensor_ctrl_t *s_ctrl)
+{
+	int rc = 0;
+	struct device_node *src_node = NULL;
+
+	src_node = of_parse_phandle(of_node, "actuator-src", 0);
+
+	if (!src_node) {
+		CAM_ERR(CAM_SENSOR, "actuator src_node NULL");
+	} else {
+		s_ctrl->actuator_pdev = of_find_device_by_node(src_node);
+		if (!s_ctrl->actuator_pdev) {
+			CAM_ERR(CAM_SENSOR, ": can't find the device by node");
+			of_node_put(src_node);
+			return -EINVAL;
+		}
+		of_node_put(src_node);
+		src_node = NULL;
+	}
+	return rc;
+}
+
 static int32_t cam_sensor_driver_get_dt_data(struct cam_sensor_ctrl_t *s_ctrl)
 {
 	int32_t rc = 0;
@@ -207,6 +269,12 @@ static int32_t cam_sensor_driver_get_dt_data(struct cam_sensor_ctrl_t *s_ctrl)
 			 rc);
 		goto FREE_SENSOR_DATA;
 	}
+
+	s_ctrl->ois_pdev = NULL;
+	cam_sensor_get_ois_dev(of_node, s_ctrl);
+
+	s_ctrl->actuator_pdev = NULL;
+	cam_sensor_get_actuator_dev(of_node, s_ctrl);
 
 	rc = cam_sensor_init_bus_params(s_ctrl);
 	if (rc < 0) {

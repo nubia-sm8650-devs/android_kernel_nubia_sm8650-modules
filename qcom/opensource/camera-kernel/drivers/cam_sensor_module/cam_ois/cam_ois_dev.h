@@ -125,6 +125,8 @@ struct cam_ois_ctrl_t {
 	struct i2c_settings_array i2c_fw_init_data[MAX_OIS_FW_COUNT];
 	struct i2c_settings_array i2c_fw_finalize_data[MAX_OIS_FW_COUNT];
 	struct i2c_settings_array i2c_fw_version_data;
+	uint32_t (*read_ver)(struct cam_ois_ctrl_t *o_ctrl);
+	uint32_t (*dw978x_firmware_download)(struct cam_ois_ctrl_t *o_ctrl);
 };
 
 /**
@@ -137,4 +139,13 @@ int cam_ois_driver_init(void);
  * @brief : API to remove OIS Hw from platform framework.
  */
 void cam_ois_driver_exit(void);
+
+struct CameraOisParams
+{
+    const char*     SensorName;
+    const char*     OISName;
+    int32_t         FWVersion;
+    int32_t         FWDate;
+};
+
 #endif /*_CAM_OIS_DEV_H_ */

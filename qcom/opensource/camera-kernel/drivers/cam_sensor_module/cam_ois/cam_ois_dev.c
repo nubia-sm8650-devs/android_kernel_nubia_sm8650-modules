@@ -11,6 +11,8 @@
 #include "cam_debug_util.h"
 #include "camera_main.h"
 #include "cam_compat.h"
+#include "zte_camera_ois_util.h"
+#include "cam_ois_dw978x.h"
 
 static struct cam_i3c_ois_data {
 	struct cam_ois_ctrl_t                       *o_ctrl;
@@ -177,6 +179,9 @@ static int cam_ois_init_subdev_param(struct cam_ois_ctrl_t *o_ctrl)
 	o_ctrl->v4l2_dev_str.ent_function = CAM_OIS_DEVICE_TYPE;
 	o_ctrl->v4l2_dev_str.token = o_ctrl;
 	 o_ctrl->v4l2_dev_str.close_seq_prior = CAM_SD_CLOSE_MEDIUM_PRIORITY;
+
+	o_ctrl->read_ver = cam_ois_read_firmware_ver; 
+	o_ctrl->dw978x_firmware_download = cam_ois_dw978x_firmware_download;
 
 	rc = cam_register_subdev(&(o_ctrl->v4l2_dev_str));
 	if (rc)

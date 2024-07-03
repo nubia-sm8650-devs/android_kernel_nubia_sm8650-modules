@@ -1680,7 +1680,8 @@ int cam_flash_pmic_pkt_parser(struct cam_flash_ctrl *fctrl, void *arg)
 					rc);
 			cam_mem_put_cpu_buf(cmd_desc->mem_handle);
 			cam_mem_put_cpu_buf(config.packet_handle);
-			return rc;
+			//return rc;
+			break;
 		}
 		case CAMERA_SENSOR_FLASH_CMD_TYPE_QUERYCURR: {
 			int query_curr_ma = 0;
@@ -1764,7 +1765,8 @@ int cam_flash_pmic_pkt_parser(struct cam_flash_ctrl *fctrl, void *arg)
 					rc);
 			cam_mem_put_cpu_buf(cmd_desc->mem_handle);
 			cam_mem_put_cpu_buf(config.packet_handle);
-			return rc;
+			//return rc;
+			break;
 		}
 		default:
 			CAM_ERR(CAM_FLASH, "Wrong cmd_type : %d",

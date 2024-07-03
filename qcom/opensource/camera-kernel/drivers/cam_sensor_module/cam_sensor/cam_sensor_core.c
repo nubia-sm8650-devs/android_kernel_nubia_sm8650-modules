@@ -13,9 +13,27 @@
 #include "cam_common_util.h"
 #include "cam_packet_util.h"
 #include "cam_req_mgr_dev.h"
+#include "cam_ois_dev.h"
+#include "cam_ois_dw978x.h"
+#include "zte_camera_sensor_util.h"
+#include "cam_actuator_dev.h"
 
 #define CAM_SENSOR_PIPELINE_DELAY_MASK        0xFF
 #define CAM_SENSOR_MODESWITCH_DELAY_SHIFT     8
+#define WRITE_SIZE                            8
+
+struct cam_sensor_i2c_reg_array g_actuator_9825h_pid[WRITE_SIZE] =
+{
+	/* dw9825h pid control reg */
+	{0x02, 0x40, 0, 0xFFFF},
+	{0x2e, 0xce, 0, 0xFFFF},
+	{0x4e, 0x01, 0, 0xFFFF},
+	{0x4f, 0xf4, 0, 0xFFFF},
+	{0x03, 0x01, 10, 0xFFFF},
+	{0x04, 0x01, 10, 0xFFFF},
+	{0x02, 0x40, 0, 0xFFFF},
+	{0x02, 0x00, 0, 0xFFFF},
+};
 
 extern struct completion *cam_sensor_get_i3c_completion(uint32_t index);
 
@@ -982,12 +1000,114 @@ void cam_sensor_shutdown(struct cam_sensor_ctrl_t *s_ctrl)
 	s_ctrl->sensor_state = CAM_SENSOR_INIT;
 }
 
+int cam_actuator_pid_ctl(struct cam_sensor_ctrl_t *s_ctrl)
+{
+	int32_t                     rc = 0, cnt;
+	uint32_t                    addr        = 0x02;
+	uint32_t                    data        = 0x40;
+	uint32_t                    data_4e     = 0;
+	uint32_t                    data_4f     = 0;
+	uint16_t                    slave_addr  = 0x1E;
+	enum camera_sensor_i2c_type addr_type   = CAMERA_SENSOR_I2C_TYPE_BYTE;
+	enum camera_sensor_i2c_type data_type   = CAMERA_SENSOR_I2C_TYPE_BYTE;
+	struct cam_actuator_ctrl_t *a_ctrl      = NULL;
+
+	if (s_ctrl->actuator_pdev)
+	{
+		a_ctrl = platform_get_drvdata(s_ctrl->actuator_pdev);
+		if (!a_ctrl)
+		{
+			CAM_ERR(CAM_SENSOR, ": can't find the actuator device");
+			return -EINVAL;
+		}
+		else
+		{
+			memcpy(a_ctrl->io_master_info.cci_client, s_ctrl->io_master_info.cci_client, sizeof(struct cam_sensor_cci_client));
+
+			a_ctrl->io_master_info.cci_client->sid           = slave_addr >> 1;
+			a_ctrl->io_master_info.cci_client->i2c_freq_mode = I2C_STANDARD_MODE;
+
+			rc = zte_cam_cci_i2c_write(&(a_ctrl->io_master_info),
+				addr,
+				data,
+				addr_type,
+				data_type);
+
+			if (rc < 0)
+			{
+				CAM_ERR(CAM_SENSOR, "addr[0x%x]: 0x%x i2c write failed %d", addr, data, rc);
+			}
+			else
+			{
+				addr = 0x4E;
+				rc = camera_io_dev_read(&(a_ctrl->io_master_info),
+					addr, &data_4e, addr_type, data_type, false);
+				if (rc < 0)
+				{
+					CAM_ERR(CAM_SENSOR, "0x%x i2c read failed %d", addr, rc);
+				}
+
+				addr = 0x4F;
+				rc = camera_io_dev_read(&(a_ctrl->io_master_info),
+					addr, &data_4f, addr_type, data_type, false);
+				if (rc < 0)
+				{
+					CAM_ERR(CAM_SENSOR, "0x%x i2c read failed %d", addr, rc);
+				}
+
+				if(data_4e == 0x01 && data_4f == 0xf4)
+				{
+					CAM_INFO(CAM_SENSOR,"no need pid control.");
+					rc = zte_cam_cci_i2c_write(&(a_ctrl->io_master_info),
+						0x02,
+						0x00,
+						addr_type,
+						data_type);
+					if (rc < 0)
+					{
+						CAM_ERR(CAM_SENSOR, "addr[0x02]: 0x00 i2c write failed %d", rc);
+					}
+				}
+				else
+				{
+					for (cnt = 0; cnt < WRITE_SIZE; cnt++)
+					{
+						rc = zte_cam_cci_i2c_write(&(a_ctrl->io_master_info),
+							g_actuator_9825h_pid[cnt].reg_addr,
+							g_actuator_9825h_pid[cnt].reg_data,
+							addr_type,
+							data_type);
+						msleep(g_actuator_9825h_pid[cnt].delay);
+
+						if (rc < 0)
+						{
+							CAM_ERR(CAM_SENSOR, "0x%x i2c write failed %d", g_actuator_9825h_pid[cnt].reg_addr, rc);
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		CAM_ERR(CAM_SENSOR,"actuator_pdev is null");
+	}
+
+	CAM_INFO(CAM_SENSOR, "%s Exit\n", __func__);
+
+	return rc;
+}
+
 int cam_sensor_match_id(struct cam_sensor_ctrl_t *s_ctrl)
 {
 	int rc = 0;
 	uint32_t chipid = 0;
 	struct cam_camera_slave_info *slave_info;
-
+	int res = 0;
+#if 0
+	uint32_t ois_firmware_ver = -1;
+	uint32_t i = 0;
+#endif
 	slave_info = &(s_ctrl->sensordata->slave_info);
 
 	if (!slave_info) {
@@ -1014,6 +1134,56 @@ int cam_sensor_match_id(struct cam_sensor_ctrl_t *s_ctrl)
 				slave_info->sensor_id);
 		return -ENODEV;
 	}
+
+	if(!strncmp(s_ctrl->sensor_name, "ov64b40_cerro", sizeof("ov64b40_cerro") - 1))
+	{
+		res = cam_actuator_pid_ctl(s_ctrl);
+		if (res < 0)
+		{
+			CAM_ERR(CAM_SENSOR, "Failed to write I2C settings  %d", res);
+		}
+	}
+
+#if 0
+	for (i = 0; i < sizeof(g_CameraOisParams) / sizeof(g_CameraOisParams[0]); i++)
+	{
+		if (s_ctrl->ois_firmware_ver != 0xFFFF && s_ctrl->ois_pdev
+		&& (!strncmp(s_ctrl->sensor_name, g_CameraOisParams[i].SensorName, strlen(s_ctrl->sensor_name))))
+		{
+			struct cam_ois_ctrl_t *o_ctrl = NULL;
+
+			o_ctrl = platform_get_drvdata(s_ctrl->ois_pdev);
+			if (!o_ctrl) {
+				CAM_ERR(CAM_SENSOR, ": can't find the ois device");
+				return -EINVAL;
+			}
+
+			if (o_ctrl && o_ctrl->read_ver) {
+				memcpy(o_ctrl->io_master_info.cci_client, s_ctrl->io_master_info.cci_client, sizeof(struct cam_sensor_cci_client));
+
+				ois_firmware_ver = o_ctrl->read_ver(o_ctrl);
+				s_ctrl->ois_firmware_ver = g_CameraOisParams[i].FWVersion << 16 | g_CameraOisParams[i].FWDate;
+
+				// compare ver bit16-bit31
+				if ((ois_firmware_ver & 0xFFFF0000) < (s_ctrl->ois_firmware_ver & 0xFFFF0000)) {
+					//update ois firmware
+					CAM_ERR(CAM_SENSOR, ": need update ois firmware, read ver 0x%x, default 0x%x"
+						, ois_firmware_ver, s_ctrl->ois_firmware_ver);
+
+					snprintf(o_ctrl->ois_name, OIS_NAME_LEN, "%s", g_CameraOisParams[i].OISName);
+
+					ois_firmware_ver = o_ctrl->dw978x_firmware_download(o_ctrl);
+					if (ois_firmware_ver == s_ctrl->ois_firmware_ver)
+						CAM_ERR(CAM_SENSOR, "%s: success to update ois firmware, read ver 0x%x, default 0x%x",
+							o_ctrl->ois_name, ois_firmware_ver, s_ctrl->ois_firmware_ver);
+				} else {
+					CAM_ERR(CAM_SENSOR, "%s: no need update ois firmware, read ver 0x%x",
+						o_ctrl->ois_name, ois_firmware_ver);
+				}
+			}
+		}
+	}
+#endif
 	return rc;
 }
 
@@ -1205,6 +1375,7 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 		 */
 		s_ctrl->is_probe_succeed = 1;
 		s_ctrl->sensor_state = CAM_SENSOR_INIT;
+		msm_sensor_enable_debugfs(s_ctrl);
 
 		CAM_INFO(CAM_SENSOR,
 				"Probe success for %s slot:%d,slave_addr:0x%x,sensor_id:0x%x",
