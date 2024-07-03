@@ -15,6 +15,8 @@
 #include "cam_res_mgr_api.h"
 #include "cam_common_util.h"
 #include "cam_packet_util.h"
+#include "cam_ois_dw978x.h"
+#include "zte_camera_ois_util.h"
 
 #define CAM_OIS_FW_VERSION_CHECK_MASK 0x1
 
@@ -401,6 +403,7 @@ static int cam_ois_slaveInfo_pkt_parser(struct cam_ois_ctrl_t *o_ctrl,
 			sizeof(struct cam_ois_opcode));
 		CAM_DBG(CAM_OIS, "Slave addr: 0x%x Freq Mode: %d",
 			ois_info->slave_addr, ois_info->i2c_freq_mode);
+		msm_ois_enable_debugfs(o_ctrl);
 	} else if (o_ctrl->io_master_info.master_type == I2C_MASTER) {
 		o_ctrl->io_master_info.client->addr = ois_info->slave_addr;
 		CAM_DBG(CAM_OIS, "Slave addr: 0x%x", ois_info->slave_addr);
@@ -707,10 +710,20 @@ static int cam_ois_fw_download(struct cam_ois_ctrl_t *o_ctrl)
 	struct device                     *dev = &(o_ctrl->pdev->dev);
 	struct cam_sensor_i2c_reg_setting  i2c_reg_setting;
 	void                              *vaddr = NULL;
+	uint16_t                           i = 0;
 
 	if (!o_ctrl) {
 		CAM_ERR(CAM_OIS, "Invalid Args");
 		return -EINVAL;
+	}
+
+	for (i = 0; i < sizeof(g_CameraOisParams) / sizeof(g_CameraOisParams[0]); i++)
+	{
+		if(!strncmp(o_ctrl->ois_name, g_CameraOisParams[i].OISName, strlen(o_ctrl->ois_name)))
+		{
+			rc = cam_ois_dw978x_fw_download(o_ctrl, &g_CameraOisParams[i]);
+			return rc;
+		}
 	}
 
 	snprintf(name_coeff, 32, "%s.coeff", o_ctrl->ois_name);
@@ -1284,12 +1297,12 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 					} else {
 						CAM_DBG(CAM_OIS, "OIS fwinit settings success");
 					}
+				}
 
-					rc = cam_ois_fw_download(o_ctrl);
-					if (rc) {
-						CAM_ERR(CAM_OIS, "Failed OIS FW Download");
-						goto pwr_dwn;
-					}
+				rc = cam_ois_fw_download(o_ctrl);
+				if (rc) {
+					CAM_ERR(CAM_OIS, "Failed OIS FW Download");
+					goto pwr_dwn;
 				}
 			}
 		}
@@ -1529,16 +1542,24 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			return rc;
 		}
 
-		if (o_ctrl->fw_info.fw_count > 0) {
-			uint8_t ois_endianness =
-				(o_ctrl->fw_info.endianness & OIS_ENDIANNESS_MASK_INPUTPARAM) >> 4;
-			rc = cam_ois_update_time(i2c_reg_settings, ois_endianness);
-		} else
-			rc = cam_ois_update_time(i2c_reg_settings, CAM_ENDIANNESS_LITTLE);
-		if (rc < 0) {
-			CAM_ERR(CAM_OIS, "Cannot update time");
-			cam_mem_put_cpu_buf(dev_config.packet_handle);
-			return rc;
+		if (!strncmp(o_ctrl->ois_name, "ois_dw978", sizeof("ois_dw978") - 1)) {
+			rc = cam_ois_update_time_dw9781c(i2c_reg_settings);
+			if (rc < 0) {
+				CAM_ERR(CAM_OIS, "Cannot update time");
+				return rc;
+			}
+		} else {
+			if (o_ctrl->fw_info.fw_count > 0) {
+				uint8_t ois_endianness =
+					(o_ctrl->fw_info.endianness & OIS_ENDIANNESS_MASK_INPUTPARAM) >> 4;
+				rc = cam_ois_update_time(i2c_reg_settings, ois_endianness);
+			} else
+				rc = cam_ois_update_time(i2c_reg_settings, CAM_ENDIANNESS_LITTLE);
+			if (rc < 0) {
+				CAM_ERR(CAM_OIS, "Cannot update time");
+				cam_mem_put_cpu_buf(dev_config.packet_handle);
+				return rc;
+			}
 		}
 
 		rc = cam_ois_apply_settings(o_ctrl, i2c_reg_settings);

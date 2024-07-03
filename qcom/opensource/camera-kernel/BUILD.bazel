@@ -19,6 +19,11 @@ driver_header_globs = [
     "drivers/**/*.h",
     "drivers/camera_main.h",
     "dt-bindings/msm-camera.h",
+    "drivers/cam_sensor_module/zte_io/*.h",
+    "drivers/cam_sensor_module/cam_ois/*.h",
+    "vl53L1/*.h",
+    "vl53L1/inc/*.h",
+    "vl53L1/protected/inc/*.h",
 ]
 
 # Generated list with: find drivers -type f -name '*.h' -printf '"%h",\n' | sort -u
@@ -112,6 +117,13 @@ driver_includes = [
     "drivers/cam_smmu",
     "drivers/cam_sync",
     "drivers/cam_utils",
+    "drivers/cam_sensor_module/zte_io",
+    "vl53L1",
+    "vl53L1/inc",
+    "vl53L1/ipp",
+    "vl53L1/protected/src",
+    "vl53L1/protected/inc",
+    "vl53L1/src",
 ]
 
 ddk_headers(
