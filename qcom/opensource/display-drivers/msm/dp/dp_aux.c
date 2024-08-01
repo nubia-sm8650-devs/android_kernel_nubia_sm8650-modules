@@ -16,6 +16,9 @@
 #include "dp_aux.h"
 #include "dp_hpd.h"
 #include "dp_debug.h"
+#if IS_ENABLED(CONFIG_NUBIA_DP)
+#include "../nubiadp/usb_switch_dp.h"
+#endif
 
 #define DP_AUX_ENUM_STR(x)		#x
 #define DP_AUX_IPC_NUM_PAGES 10
@@ -813,6 +816,11 @@ static int dp_aux_configure_fsa_switch(struct dp_aux *dp_aux,
 
 	if (rc)
 		DP_AUX_ERR(dp_aux, "failed to configure fsa4480 i2c device (%d)\n", rc);
+
+#if IS_ENABLED(CONFIG_NUBIA_DP)
+	dp_switch_event(aux->aux_switch_node, event);
+#endif
+
 end:
 	return rc;
 }
@@ -871,6 +879,11 @@ static int dp_aux_configure_wcd_switch(struct dp_aux *dp_aux,
 		aux->switch_enable = enable;
 		aux->switch_orientation = orientation;
 	}
+
+#if IS_ENABLED(CONFIG_NUBIA_DP)
+	dp_switch_event(aux->aux_switch_node, status);
+#endif
+
 end:
 	return rc;
 }
