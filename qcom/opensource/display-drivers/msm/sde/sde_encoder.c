@@ -5365,6 +5365,11 @@ end:
 	return ret;
 }
 
+#ifdef CONFIG_ZTE_LCD_HBM
+extern int sde_connector_update_hbm(struct drm_connector *connector,
+				    struct sde_encoder_virt *sde_enc);
+#endif
+
 void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool config_changed)
 {
 	struct sde_encoder_virt *sde_enc;
@@ -5402,6 +5407,12 @@ void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool config_changed)
 	}
 	if (sde_enc->cur_master)
 		_sde_encoder_update_retire_txq(sde_enc->cur_master, sde_kms);
+
+#ifdef CONFIG_ZTE_LCD_HBM
+	if (sde_enc->cur_master && sde_enc->cur_master->connector)
+		sde_connector_update_hbm(sde_enc->cur_master->connector,
+					 sde_enc);
+#endif
 
 	/* delay frame kickoff based on expected present time */
 	_sde_encoder_delay_kickoff_processing(sde_enc);
