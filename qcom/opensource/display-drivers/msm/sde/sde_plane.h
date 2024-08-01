@@ -439,4 +439,12 @@ void sde_plane_dump_input_fence(struct drm_plane *plane);
  * Returns: true if the input sw fence is signaled, otherwise false.
  */
 bool sde_plane_is_sw_fence_signaled(struct drm_plane *plane);
+
+#ifdef CONFIG_ZTE_LCD_HBM
+int sde_plane_is_fod_layer(const struct drm_plane_state *drm_state);
+int sde_plane_is_hbm_mask_layer(const struct drm_plane_state *drm_state);
+int sde_plane_is_aod_layer(const struct drm_plane_state *drm_state);
+int sde_plane_is_fs_layer(const struct drm_plane_state *drm_state);
+#endif
+
 #endif /* _SDE_PLANE_H_ */
