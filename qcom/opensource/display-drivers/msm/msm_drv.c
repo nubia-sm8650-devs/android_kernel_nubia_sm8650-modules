@@ -2365,6 +2365,10 @@ static int __init msm_drm_register(void)
 	msm_dsi_register();
 	msm_edp_register();
 	msm_hdmi_register();
+#if IS_ENABLED(CONFIG_NUBIA_DP)
+	nubia_usb_switch_dp_init();
+	nubia_dp_preference_init();
+#endif
 	return 0;
 }
 
@@ -2382,6 +2386,10 @@ static void __exit msm_drm_unregister(void)
 	dp_display_unregister();
 	dsi_display_unregister();
 	sde_rsc_unregister();
+#if IS_ENABLED(CONFIG_NUBIA_DP)
+	nubia_usb_switch_dp_exit();
+	nubia_dp_preference_exit();
+#endif
 	platform_driver_unregister(&msm_platform_driver);
 }
 

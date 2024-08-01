@@ -47,6 +47,8 @@ module_entry(
             "msm/dp/dp_pll.c",
             "msm/dp/dp_pll_5nm.c",
             "msm/dp/dp_pll_4nm.c",
+            "msm/nubiadp/nubia_dp_preference.c",
+            "msm/nubiadp/usb_switch_dp.c",
          ],
          "CONFIG_DRM_MSM_DP_MST" : [
             "msm/dp/dp_mst_drm.c",
