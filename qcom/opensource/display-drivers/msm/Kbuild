@@ -253,6 +253,11 @@ msm_drm-$(CONFIG_DRM_MSM_DSI) += dsi/dsi_phy.o \
 				 dsi/dsi_clk_manager.o \
 				 dsi/dsi_display_test.o
 
+msm_drm-$(CONFIG_DRM_MSM_DSI) += zte_disp/zte_display_panel.o \
+				 zte_disp/zte_panel_backlight.o \
+				 zte_disp/zte_panel_feature.o \
+				 zte_disp/zte_panel_work.o
+
 msm_drm-$(CONFIG_DSI_PARSER) += dsi/dsi_parser.o
 
 msm_drm-$(CONFIG_THERMAL_OF) += msm_cooling_device.o

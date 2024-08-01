@@ -140,6 +140,10 @@ module_entry(
             "msm/dsi/dsi_panel.c",
             "msm/dsi/dsi_clk_manager.c",
             "msm/dsi/dsi_display_test.c",
+            "msm/zte_disp/zte_display_panel.c",
+            "msm/zte_disp/zte_panel_backlight.c",
+            "msm/zte_disp/zte_panel_feature.c",
+            "msm/zte_disp/zte_panel_work.c",
          ],
          "CONFIG_DSI_PARSER" : [
             "msm/dsi/dsi_parser.c",
