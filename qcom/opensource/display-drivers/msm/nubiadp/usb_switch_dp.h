@@ -11,7 +11,7 @@
 #include <linux/of.h>
 #include <linux/notifier.h>
 
-#if IS_ENABLED(CONFIG_QCOM_FSA4480_I2C)
+#if IS_ENABLED(CONFIG_QCOM_DP_FSA4480_I2C)
 #include <linux/soc/qcom/fsa4480-i2c.h>
 #elif IS_ENABLED(CONFIG_QCOM_WCD939X_I2C)
 #include <linux/soc/qcom/wcd939x-i2c.h>
@@ -22,7 +22,7 @@
 #include "dp_debug.h"
 
 
-#if IS_ENABLED(CONFIG_QCOM_FSA4480_I2C)
+#if IS_ENABLED(CONFIG_QCOM_DP_FSA4480_I2C)
 int dp_switch_event(struct device_node *node, enum fsa_function event);
 #endif
 

@@ -28,7 +28,7 @@ struct dp_switch_priv {
 	bool is_enabled;
 } *dp_switch = NULL;
 
-#if IS_ENABLED(CONFIG_QCOM_FSA4480_I2C)
+#if IS_ENABLED(CONFIG_QCOM_DP_FSA4480_I2C)
 int dp_switch_event(struct device_node *node, enum fsa_function event)
 {
 	if (!dp_switch){
