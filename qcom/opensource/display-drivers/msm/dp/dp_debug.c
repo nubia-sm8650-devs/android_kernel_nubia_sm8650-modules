@@ -28,9 +28,6 @@
 
 #define DEBUG_NAME "drm_dp"
 
-#ifdef CONFIG_NUBIA_DP
-extern struct dp_debug_private *dp_debug_p;
-#else
 struct dp_debug_private {
 	struct dentry *root;
 
@@ -60,7 +57,6 @@ struct dp_debug_private {
 	struct mutex lock;
 	struct dp_aux_bridge *sim_bridge;
 };
-#endif
 
 static int dp_debug_sim_hpd_cb(void *arg, bool hpd, bool hpd_irq)
 {
@@ -2562,9 +2558,6 @@ struct dp_debug *dp_debug_get(struct dp_debug_in *in)
 	dp_debug->set_mst_con = dp_debug_set_mst_con;
 
 	dp_debug->max_pclk_khz = debug->parser->max_pclk_khz;
-#ifdef CONFIG_NUBIA_DP
-	dp_debug_p = debug;
-#endif
 
 	return dp_debug;
 error:

@@ -34,11 +34,6 @@
 #include "dp_pll.h"
 #include "sde_dbg.h"
 
-#ifdef CONFIG_NUBIA_DP
-#include "../nubiadp/nubia_dp_preference.h"
-extern struct edid_control *edid_ctl;
-#endif
-
 #define DRM_DP_IPC_NUM_PAGES 10
 #define DP_MST_DEBUG(fmt, ...) DP_DEBUG(fmt, ##__VA_ARGS__)
 
@@ -1794,26 +1789,6 @@ static int dp_display_usbpd_disconnect_cb(struct device *dev)
 	dp_display_state_remove(DP_STATE_CONFIGURED);
 	mutex_unlock(&dp->session_lock);
 
-#ifdef CONFIG_NUBIA_DP
-	if (edid_ctl) {
-		if (edid_ctl->simulate_hpd) {
-			edid_ctl->simulate_hpd = false;
-		} else {
-			dp->panel->mode_override = false;
-			memset(edid_ctl->name, 0, sizeof(edid_ctl->name));
-			memset(edid_ctl->dp_productvdo, 0,
-			       sizeof(edid_ctl->dp_productvdo));
-			edid_ctl->cable_connected = false;
-			memset(edid_ctl->edid_modes, 0, EDID_MODES_SIZE);
-			memset(edid_ctl->sel_mode, 0,
-			       sizeof(struct selected_edid_mode));
-		}
-	} else {
-		DP_WARN(": edid_ctl = NULL\n");
-	}
-	DP_INFO(": simulate_hpd = %d, cable_connected = %d\n",
-		edid_ctl->simulate_hpd, edid_ctl->cable_connected);
-#endif
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_EXIT, dp->state);
 end:
 	return rc;
@@ -3155,18 +3130,6 @@ static enum drm_mode_status dp_display_validate_mode(
 	if (!debug)
 		goto end;
 
-#ifdef CONFIG_NUBIA_DP
-	if (edid_ctl) {
-		if (!strcmp(edid_ctl->name, "SmartGlasses") ||
-		    !strcmp(edid_ctl->name, "PGlass")) {
-			dp_panel->mode_override = 0;
-			DP_INFO("SmartGlasses 3D mode, set mode_override = 0\n");
-		}
-	} else {
-		DP_INFO("edid_ctl is NULL\n");
-	}
-#endif
-
 	dp_display->convert_to_dp_mode(dp_display, panel, mode, &dp_mode);
 
 	/* As per spec, 640x480 mode should always be present as fail-safe */
@@ -3263,12 +3226,6 @@ static int dp_display_get_modes(struct dp_display *dp, void *panel,
 	ret = dp_panel->get_modes(dp_panel, dp_panel->connector, dp_mode);
 	if (dp_mode->timing.pixel_clk_khz)
 		dp->max_pclk_khz = dp_mode->timing.pixel_clk_khz;
-#ifdef CONFIG_NUBIA_DP
-	if (!dp_panel->mode_override && dp_panel->edid_ctrl->edid &&
-	    !dp_panel->video_test && ret)
-		nubia_edid_modes(dp_panel->connector);
-#endif
-
 	return ret;
 }
 

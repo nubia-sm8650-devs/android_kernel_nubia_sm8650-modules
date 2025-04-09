@@ -16,10 +16,6 @@
 #include "dp_debug.h"
 #include "sde_dbg.h"
 
-#ifdef CONFIG_NUBIA_DP
-#include "../nubiadp/nubia_dp_preference.h"
-extern struct edid_control *edid_ctl;
-#endif
 
 #define ALTMODE_CONFIGURE_MASK (0x3f)
 #define ALTMODE_HPD_STATE_MASK (0x40)
@@ -146,21 +142,6 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 			altmode->dp_altmode.base.multi_func,
 			altmode->dp_altmode.base.hpd_high,
 			altmode->dp_altmode.base.hpd_irq, altmode->connected);
-
-#ifdef CONFIG_NUBIA_DP
-	if (edid_ctl) {
-		snprintf(edid_ctl->dp_productvdo,
-			 sizeof(edid_ctl->dp_productvdo),
-			 "0x%02X%02X%02X%02X\n", payload[12], payload[13],
-			 payload[14], payload[15]);
-		DP_INFO(": connected = %d, orientation = %d, pin = %d, "
-			"hpd_state = %d, dp_productvdo = %s\n",
-			altmode->connected, orientation, pin, hpd_state,
-			edid_ctl->dp_productvdo);
-	} else {
-		DP_WARN("edid_ctl = NULL\n");
-	}
-#endif
 
 	if (!pin) {
 		/* Cable detach */
