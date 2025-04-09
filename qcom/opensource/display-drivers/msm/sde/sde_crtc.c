@@ -6167,66 +6167,6 @@ static int _sde_crtc_check_zpos(struct drm_crtc_state *state,
 	return rc;
 }
 
-#ifdef CONFIG_ZTE_LCD_HBM
-bool sde_crtc_get_fingerprint_pressed(struct drm_crtc_state *crtc_state)
-{
-	struct sde_crtc_state *cstate;
-	if (!crtc_state)
-		return false;
-	cstate = to_sde_crtc_state(crtc_state);
-	return cstate->fingerprint_pressed;
-}
-
-bool sde_crtc_get_hbm_mask_active(struct drm_crtc_state *crtc_state)
-{
-	struct sde_crtc_state *cstate;
-	if (!crtc_state)
-		return false;
-	cstate = to_sde_crtc_state(crtc_state);
-	return cstate->hbm_mask_active;
-}
-
-bool sde_crtc_get_aodlayer_active(struct drm_crtc_state *crtc_state)
-{
-	struct sde_crtc_state *cstate;
-	if (!crtc_state)
-		return false;
-	cstate = to_sde_crtc_state(crtc_state);
-	return cstate->aodlayer_active;
-}
-
-bool sde_crtc_get_fslayer_active(struct drm_crtc_state *crtc_state)
-{
-	struct sde_crtc_state *cstate;
-	if (!crtc_state)
-		return false;
-	cstate = to_sde_crtc_state(crtc_state);
-	return cstate->fslayer_active;
-}
-
-static void sde_crtc_zte_layer_atomic_check(struct sde_crtc_state *cstate,
-					    struct plane_state *pstates,
-					    int cnt)
-{
-	int plane_idx;
-	cstate->fingerprint_pressed = false;
-	cstate->hbm_mask_active = false;
-	cstate->aodlayer_active = false;
-	cstate->fslayer_active = false;
-	for (plane_idx = 0; plane_idx < cnt; plane_idx++) {
-		if (sde_plane_is_fod_layer(pstates[plane_idx].drm_pstate))
-			cstate->fingerprint_pressed = true;
-		if (sde_plane_is_hbm_mask_layer(pstates[plane_idx].drm_pstate))
-			cstate->hbm_mask_active = true;
-		if (sde_plane_is_aod_layer(pstates[plane_idx].drm_pstate))
-			cstate->aodlayer_active = true;
-		if (sde_plane_is_fs_layer(pstates[plane_idx].drm_pstate)) {
-			cstate->fslayer_active = true;
-		}
-	}
-}
-#endif
-
 static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 		struct drm_crtc_state *state,
 		struct plane_state *pstates,
@@ -6255,10 +6195,6 @@ static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 			plane, multirect_plane, &cnt);
 	if (rc)
 		return rc;
-
-#ifdef CONFIG_ZTE_LCD_HBM
-	sde_crtc_zte_layer_atomic_check(cstate, pstates, cnt);
-#endif
 
 	/* assign mixer stages based on sorted zpos property */
 	rc = _sde_crtc_check_zpos(state, sde_crtc, pstates, cstate, mode, cnt);

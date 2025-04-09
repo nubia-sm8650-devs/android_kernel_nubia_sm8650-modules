@@ -605,12 +605,6 @@ struct sde_crtc_state {
 	bool cont_splash_populated;
 	struct sde_line_insertion_param line_insertion;
 	bool hwfence_in_fences_set;
-#ifdef CONFIG_ZTE_LCD_HBM
-	bool fingerprint_pressed;
-	bool hbm_mask_active;
-	bool aodlayer_active;
-	bool fslayer_active;
-#endif
 };
 
 enum sde_crtc_irq_state {
