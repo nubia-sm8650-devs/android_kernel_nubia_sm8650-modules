@@ -18,7 +18,6 @@
 #include "sde_hw_interrupts.h"
 #include "sde_core_irq.h"
 #include "dsi_panel.h"
-#include "dsi_display.h"
 #include "sde_hw_color_proc_common_v4.h"
 #include "sde_vm.h"
 
@@ -1815,45 +1814,6 @@ static int _sde_cp_crtc_checkfeature(u32 feature,
 	return ret;
 }
 
-extern bool sde_crtc_get_fingerprint_pressed(struct drm_crtc_state *crtc_state);
-extern bool sde_crtc_get_fslayer_active(struct drm_crtc_state *crtc_state);
-extern struct dsi_display *get_main_display(void);
-int zte_bypass_dspp_gamut(void *sde_hw_cp_cfg,
-			  struct sde_crtc_state *sde_crtc_state)
-{
-	struct sde_hw_cp_cfg *hw_cfg = sde_hw_cp_cfg;
-	struct drm_crtc_state *crtc_state = NULL;
-	struct dsi_display *display = get_main_display();
-	struct dsi_panel *panel;
-
-	if (!hw_cfg || !sde_crtc_state || !display) {
-		DRM_ERROR("Invalid params\n");
-		return -EINVAL;
-	}
-
-	panel = display->panel;
-	if (!panel) {
-		DRM_ERROR("No panel device\n");
-		return -ENODEV;
-	}
-
-	if (!panel->bypass_gamut)
-		return -ENODEV;
-
-	crtc_state = &sde_crtc_state->base;
-	if (!crtc_state) {
-		DRM_ERROR("Invalid params\n");
-		return -EINVAL;
-	}
-
-	if (sde_crtc_get_fingerprint_pressed(crtc_state) ||
-	    sde_crtc_get_fslayer_active(crtc_state)) {
-		hw_cfg->payload = NULL;
-		DRM_INFO("MSM_LCD skip dspp gamut!");
-	}
-	return 0;
-}
-
 static void _sde_cp_crtc_commit_feature(struct sde_cp_node *prop_node,
 				   struct sde_crtc *sde_crtc)
 {
@@ -1917,9 +1877,6 @@ static void _sde_cp_crtc_commit_feature(struct sde_cp_node *prop_node,
 			hw_cfg.mixer_info = hw_lm;
 			hw_cfg.displayh = num_mixers * hw_lm->cfg.out_width;
 			hw_cfg.displayv = hw_lm->cfg.out_height;
-
-			if (prop_node->feature == SDE_CP_CRTC_DSPP_GAMUT)
-				zte_bypass_dspp_gamut(&hw_cfg, sde_crtc_state);
 
 			ret = commit_feature(hw_dspp, &hw_cfg, sde_crtc);
 			if (ret)

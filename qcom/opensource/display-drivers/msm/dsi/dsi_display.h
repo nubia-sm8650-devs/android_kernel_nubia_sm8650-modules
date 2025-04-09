@@ -861,8 +861,4 @@ int dsi_display_get_panel_scan_line(void *display, u16 *scan_line, ktime_t *scan
  */
 void dsi_display_report_dead(struct dsi_display *display);
 
-struct dsi_display *get_main_display(void);
-
-struct dsi_display *get_sec_display(void);
-
 #endif /* _DSI_DISPLAY_H_ */

@@ -23,7 +23,6 @@
 #include "dsi_pwr.h"
 #include "sde_dbg.h"
 #include "dsi_parser.h"
-#include "../zte_disp/zte_display_panel.h"
 
 #define to_dsi_display(x) container_of(x, struct dsi_display, host)
 #define INT_BASE_10 10
@@ -37,11 +36,6 @@
 
 #define DSI_CLOCK_BITRATE_RADIX 10
 #define MAX_TE_SOURCE_ID  2
-
-// #ifdef CONFIG_ZTE_DISP
-static struct dsi_display *primary_display;
-static struct dsi_display *secondary_display;
-// #endif
 
 #define SEC_PANEL_NAME_MAX_LEN  256
 
@@ -1365,46 +1359,16 @@ int dsi_display_set_power(struct drm_connector *connector,
 	switch (power_mode) {
 	case SDE_MODE_DPMS_LP1:
 		rc = dsi_panel_set_lp1(display->panel);
-		display->panel->in_aod = true;
-		if (!atomic_read(&display->panel->pm_aod))
-			atomic_inc(&display->panel->pm_aod);
-		display->panel->disp_feature->zte_panel_state =
-			SDE_MODE_DPMS_LP1;
-		zte_aod_event_work_handler(display->panel, AOD_PM_ON);
 		break;
 	case SDE_MODE_DPMS_LP2:
 		rc = dsi_panel_set_lp2(display->panel);
-		display->panel->in_aod = true;
-		if (!atomic_read(&display->panel->pm_aod))
-			atomic_inc(&display->panel->pm_aod);
-		display->panel->disp_feature->zte_panel_state =
-			SDE_MODE_DPMS_LP2;
 		break;
 	case SDE_MODE_DPMS_ON:
 		if ((display->panel->power_mode == SDE_MODE_DPMS_LP1) ||
-		    (display->panel->power_mode == SDE_MODE_DPMS_LP2)) {
-			if (atomic_read(&display->panel->pm_aod)) {
-				rc = dsi_panel_set_nolp(display->panel);
-				atomic_dec(&display->panel->pm_aod);
-			} else {
-				pr_info("MSM_LCD skip nolp!\n");
-			}
-		}
-		display->panel->disp_feature->zte_panel_state =
-			SDE_MODE_DPMS_ON;
-		//display->panel->in_aod = false;
-		zte_aod_event_work_handler(display->panel, AOD_PM_OFF);
-		pr_info("MSM_LCD SDE_MODE_DPMS_ON\n");
+			(display->panel->power_mode == SDE_MODE_DPMS_LP2))
+			rc = dsi_panel_set_nolp(display->panel);
 		break;
 	case SDE_MODE_DPMS_OFF:
-		display->panel->disp_feature->zte_panel_state =
-			SDE_MODE_DPMS_OFF;
-		display->panel->in_aod = false;
-		if (atomic_read(&display->panel->pm_aod))
-			atomic_dec(&display->panel->pm_aod);
-		zte_aod_event_work_handler(display->panel, AOD_PM_OFF);
-		pr_info("MSM_LCD SDE_MODE_DPMS_OFF\n");
-		return rc;
 	default:
 		return rc;
 	}
@@ -4188,9 +4152,6 @@ static int dsi_display_get_phandle_count(struct dsi_display *display,
 				propname);
 }
 
-// #ifdef CONFIG_ZTE_DISP
-extern struct device *dsi_uevent_device;
-// #endif
 static int dsi_display_parse_dt(struct dsi_display *display)
 {
 	int i, rc = 0;
@@ -4201,9 +4162,6 @@ static int dsi_display_parse_dt(struct dsi_display *display)
 	if (!strcmp(display->display_type, "primary")) {
 		dsi_ctrl_name = "qcom,dsi-ctrl-num";
 		dsi_phy_name = "qcom,dsi-phy-num";
-		// #ifdef CONFIG_ZTE_DISP
-		dsi_uevent_device = &display->pdev->dev;
-		// #endif
 	} else {
 		dsi_ctrl_name = "qcom,dsi-sec-ctrl-num";
 		dsi_phy_name = "qcom,dsi-sec-phy-num";
@@ -6173,14 +6131,6 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, display);
 
-	// #ifdef CONFIG_ZTE_DISP
-	if (!strcmp(display->display_type, "primary")) {
-		primary_display = display;
-	} else {
-		secondary_display = display;
-	}
-	// #endif
-
 	if (!dsi_display_validate_res(display)) {
 		rc = -EPROBE_DEFER;
 		DSI_ERR("resources required for display probe not present: rc=%d\n", rc);
@@ -8000,15 +7950,6 @@ int dsi_display_set_mode(struct dsi_display *display,
 		goto error;
 	}
 
-	if (display->panel->disp_feature) {
-		display->panel->disp_feature->zte_lcd_cur_fps =
-			timing.refresh_rate;
-		if (display->panel->panel_mode == DSI_OP_VIDEO_MODE) {
-			DSI_INFO("msm_lcd DSI_OP_VIDEO_MODE fps send uevent\n");
-			zte_panel_fps_send_uevent(timing.refresh_rate);
-		}
-	}
-
 	DSI_INFO("mdp_transfer_time=%d, hactive=%d, vactive=%d, fps=%d, clk_rate=%llu\n",
 			adj_mode.priv_info->mdp_transfer_time_us,
 			timing.h_active, timing.v_active, timing.refresh_rate,
@@ -9314,18 +9255,6 @@ void dsi_display_report_dead(struct dsi_display *display)
 
 	sde_connector_report_panel_dead(c_conn, false);
 }
-
-// #ifdef CONFIG_ZTE_DISP
-struct dsi_display *get_main_display(void)
-{
-	return primary_display;
-}
-
-struct dsi_display *get_sec_display(void)
-{
-	return secondary_display;
-}
-// #endif
 
 void __init dsi_display_register(void)
 {
