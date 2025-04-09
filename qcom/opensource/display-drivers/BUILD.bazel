@@ -39,14 +39,6 @@ ddk_headers(
 )
 
 ddk_headers(
-    name = "nubia_dp_headers",
-    hdrs = glob([
-      "msm/nubiadp/*.h",
-    ]),
-    includes = ["msm/nubiadp"]
-)
-
-ddk_headers(
     name = "dsi_headers",
     hdrs = glob([
       "msm/dsi/*.h",
@@ -80,7 +72,7 @@ ddk_headers(
 
 ddk_headers(
     name = "display_drivers_headers",
-    hdrs = [ ":linux_includes", ":uapi_headers", ":msm_headers",":dp_headers",":nubia_dp_headers",":dsi_headers",":sde_headers",":rotator_headers"]
+    hdrs = [ ":linux_includes", ":uapi_headers", ":msm_headers",":dp_headers",":dsi_headers",":sde_headers",":rotator_headers"]
 )
 
 ddk_uapi_headers(

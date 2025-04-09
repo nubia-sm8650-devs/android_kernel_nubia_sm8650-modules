@@ -168,9 +168,6 @@ msm_drm-$(CONFIG_DRM_MSM_DP) += dp/dp_altmode.o \
 				dp/dp_pll_5nm.o \
 				dp/dp_pll_4nm.o
 
-msm_drm-$(CONFIG_DRM_MSM_DP) += nubiadp/nubia_dp_preference.o \
-				nubiadp/usb_switch_dp.o
-
 msm_drm-$(CONFIG_DRM_MSM_DP_MST) += dp/dp_mst_drm.o
 
 msm_drm-$(CONFIG_DRM_MSM_DP_USBPD_LEGACY) += dp/dp_usbpd.o
