@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include "cam_tpg_core.h"
@@ -665,7 +665,6 @@ static int cam_tpg_packet_parse(
 	uintptr_t generic_ptr;
 	size_t len_of_buff = 0, remain_len = 0;
 	struct cam_packet *csl_packet = NULL;
-	struct cam_packet *csl_packet_u = NULL;
 
 	rc = cam_mem_get_cpu_buf(config->packet_handle,
 		&generic_ptr, &len_of_buff);
@@ -685,11 +684,13 @@ static int cam_tpg_packet_parse(
 	}
 	remain_len = len_of_buff;
 	remain_len -= (size_t)config->offset;
-	csl_packet_u = (struct cam_packet *)(generic_ptr +
+	csl_packet = (struct cam_packet *)(generic_ptr +
 		(uint32_t)config->offset);
-	rc = cam_packet_util_copy_pkt_to_kmd(csl_packet_u, &csl_packet, remain_len);
-	if (rc) {
-		CAM_ERR(CAM_TPG, "Copying packet to KMD failed");
+
+	if (cam_packet_util_validate_packet(csl_packet,
+		remain_len)) {
+		CAM_ERR(CAM_TPG, "Invalid packet params");
+		rc = -EINVAL;
 		goto end;
 	}
 
@@ -705,12 +706,12 @@ static int cam_tpg_packet_parse(
 		if (csl_packet->num_cmd_buf <= 0) {
 			CAM_ERR(CAM_TPG, "Expecting atleast one command in Init packet");
 			rc = -EINVAL;
-			goto free_kdup;
+			goto end;
 		}
 		rc = cam_tpg_cmd_buf_parse(tpg_dev, csl_packet);
 		if (rc < 0) {
 			CAM_ERR(CAM_TPG, "CMD buffer parse failed");
-			goto free_kdup;
+			goto end;
 		}
 		if (!tpg_dev->hw_no_ops)
 			tpg_hw_config(&tpg_dev->tpg_hw,
@@ -724,7 +725,7 @@ static int cam_tpg_packet_parse(
 		rc = cam_tpg_cmd_buf_parse(tpg_dev, csl_packet);
 		if (rc < 0) {
 			CAM_ERR(CAM_TPG, "CMD buffer parse failed");
-			goto free_kdup;
+			goto end;
 		}
 
 		CAM_DBG(CAM_TPG, "TPG[%d] packet request id : %llu",
@@ -751,8 +752,6 @@ static int cam_tpg_packet_parse(
 		rc = -EINVAL;
 		break;
 	}
-free_kdup:
-	cam_common_mem_free(csl_packet);
 end:
 	cam_mem_put_cpu_buf(config->packet_handle);
 	return rc;
