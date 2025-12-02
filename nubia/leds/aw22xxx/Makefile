@@ -7,6 +7,3 @@
 obj-m += zte_led.o
 
 zte_led-objs := leds-aw22xxx.o
-
-BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/zte_led.ko
-
