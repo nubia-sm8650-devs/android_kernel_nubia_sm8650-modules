@@ -1,2 +1,2 @@
-obj-$(CONFIG_VENDOR_ZTE_MISC) += zte_misc.o
+obj-m += zte_misc.o
 
