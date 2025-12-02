@@ -1,4 +1,8 @@
-obj-$(CONFIG_TOUCHSCREEN_GOODIX_BRL) += goodix_core.o
+obj-m += goodix_core.o
+
+# Enable if the touchscreen is connected via SPI bus.
+ccflags-y += -DTOUCHSCREEN_GOODIX_BRL_SPI
+
 goodix_core-y := \
 				goodix_brl_i2c.o \
 				goodix_brl_spi.o \
