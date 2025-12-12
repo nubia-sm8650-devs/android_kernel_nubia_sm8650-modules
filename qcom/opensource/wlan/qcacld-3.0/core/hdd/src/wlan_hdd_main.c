@@ -15832,6 +15832,12 @@ static int hdd_initialize_mac_address(struct hdd_context *hdd_ctx)
 		return 0;
 	}
 
+	status = hdd_update_wifimac_dat_config(hdd_ctx);
+	if (QDF_IS_STATUS_SUCCESS(status)) {
+		hdd_info("using MAC address from wifimac.dat");
+		return 0;
+	}
+
 	hdd_info("using default MAC address");
 
 	/* Use fw provided MAC */

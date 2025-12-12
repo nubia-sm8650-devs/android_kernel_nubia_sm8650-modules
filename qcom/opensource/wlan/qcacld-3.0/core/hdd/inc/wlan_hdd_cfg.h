@@ -223,6 +223,7 @@ struct hdd_config {
 enum wmm_user_mode hdd_to_csr_wmm_mode(uint8_t mode);
 
 QDF_STATUS hdd_update_mac_config(struct hdd_context *hdd_ctx);
+QDF_STATUS hdd_update_wifimac_dat_config(struct hdd_context *hdd_ctx);
 QDF_STATUS hdd_set_sme_config(struct hdd_context *hdd_ctx);
 QDF_STATUS hdd_set_policy_mgr_user_cfg(struct hdd_context *hdd_ctx);
 QDF_STATUS hdd_set_sme_chan_list(struct hdd_context *hdd_ctx);
