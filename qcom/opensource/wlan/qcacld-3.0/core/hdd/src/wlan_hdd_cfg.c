@@ -327,8 +327,65 @@ config_exit:
 	release_firmware(fw);
 	return qdf_status;
 }
+
+QDF_STATUS hdd_update_wifimac_dat_config(struct hdd_context *hdd_ctx)
+{
+	const struct firmware *fw = NULL;
+	int ret = QDF_STATUS_SUCCESS;
+	int status;
+	uint8_t mac[QDF_MAC_ADDR_SIZE];
+
+	status = request_firmware(&fw, WIFIMAC_DAT_FILE, hdd_ctx->parent_dev);
+	if (status) {
+		hdd_err("Failed to read wifimac.dat file");
+		ret = QDF_STATUS_E_FAILURE;
+		goto out;
+	}
+
+	if (!fw || !fw->data || !fw->size) {
+		hdd_err("Invalid firmware");
+		ret = QDF_STATUS_E_INVAL;
+		goto out;
+	}
+
+	status = sscanf(fw->data,
+			"wifiaddr: 0x%hhx 0x%hhx 0x%hhx 0x%hhx 0x%hhx 0x%hhx",
+			&mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+	if (status != QDF_MAC_ADDR_SIZE) {
+		hdd_err("Failed to parse MAC address from wifimac.dat");
+		ret = QDF_STATUS_E_INVAL;
+		goto out;
+	}
+
+	qdf_mem_copy(hdd_ctx->provisioned_mac_addr[0].bytes, mac,
+		     QDF_MAC_ADDR_SIZE);
+
+	status = qdf_is_macaddr_zero(&hdd_ctx->provisioned_mac_addr[0]);
+	if (status) {
+		hdd_err("Invalid MAC address: All zeros");
+		ret = QDF_STATUS_E_INVAL;
+		goto out;
+	}
+
+	hdd_ctx->num_provisioned_addr = 1;
+
+	hdd_populate_random_mac_addr(hdd_ctx,
+				     QDF_MAX_CONCURRENCY_PERSONA -
+					     hdd_ctx->num_provisioned_addr);
+	sme_set_custom_mac_addr(hdd_ctx->provisioned_mac_addr[0].bytes);
+
+out:
+	if (fw)
+		release_firmware(fw);
+	return ret;
+}
 #else
 QDF_STATUS hdd_update_mac_config(struct hdd_context *hdd_ctx)
+{
+	return QDF_STATUS_E_NOSUPPORT;
+}
+
+QDF_STATUS hdd_update_wifimac_dat_config(struct hdd_context *hdd_ctx)
 {
 	return QDF_STATUS_E_NOSUPPORT;
 }
