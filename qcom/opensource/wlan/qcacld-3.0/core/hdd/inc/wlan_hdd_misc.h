@@ -44,9 +44,11 @@
 #ifdef MSM_PLATFORM
 #define WLAN_INI_FILE              "wlan/qca_cld/" PREFIX "WCNSS_qcom_cfg.ini"
 #define WLAN_MAC_FILE              "wlan/qca_cld/" PREFIX "wlan_mac.bin"
+#define WIFIMAC_DAT_FILE           "wlan/qca_cld/" PREFIX "wifimac.dat"
 #else
 #define WLAN_INI_FILE              "wlan/" PREFIX "qcom_cfg.ini"
 #define WLAN_MAC_FILE              "wlan/" PREFIX "wlan_mac.bin"
+#define WIFIMAC_DAT_FILE           "wlan/" PREFIX "wifimac.dat"
 #endif /* MSM_PLATFORM */
 
 #define WLAN_CONNECTION_ROAMING_INI_FILE "wlan-connection-roaming.ini"
